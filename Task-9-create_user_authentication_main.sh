@@ -41,7 +41,7 @@ for server in $(cat server_list)
 do
 	echo "******************$server*****************"
 		if [ "$key_based" = true ]; then
-			ssh -i $ssh_key_path ec2-user@$server "/bin/bash -s" < /root/check_user.sh $userName
+			ssh -i $ssh_key_path ec2-user@$server "/bin/bash -s" < /root/keybased_authentication.sh $userName
 			ssh -i $ssh_key_path $userName@$server "exit"
 			if [ $? -eq 0 ]; then
 				echo "User $userName added on $server"
