@@ -1,0 +1,4 @@
+bash create_user_authentication_main.sh server_list user_to_be_created
+
+server_list - the list of servers on which users to be created.
+user_to_be_created - which user to be created.
