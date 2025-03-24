@@ -37,7 +37,7 @@ else
   exit 1
 fi
 
-for server in $(cat server_list)
+for server in $(cat $1)
 do
 	echo "******************$server*****************"
 		if [ "$key_based" = true ]; then
