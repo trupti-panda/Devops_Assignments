@@ -14,5 +14,5 @@ else
         sudo chmod 600 /home/$username/.ssh/authorized_keys
         sudo chown -R $username:$username /home/$username/.ssh
         sudo usermod -aG wheel $username
-        echo "User $username created with key-based authentication on $server."
+        echo "User $username created with key-based authentication ."
 fi
