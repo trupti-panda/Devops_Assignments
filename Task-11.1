@@ -1,0 +1,58 @@
+# TAsk-11.1 -- Create a server from default vpc where subnet belongs to 1a and you should not pass the subnet value but you have to consume the existing values and built the server from subnet 1A zone . Name the server as "task-11-server1a".
+
+#providers.tf 
+terraform {
+  required_providers {
+    aws = {
+      source = "hashicorp/aws"
+      version = "5.92.0"
+    }
+  }
+}
+
+provider "aws" {
+        #Configuration options
+        region = "us-west-2"
+}
+
+
+#main.tf
+data "aws_vpc" "default_vpc" {
+  default = true
+}
+
+data "aws_subnet" "selected_subnet" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.default_vpc.id]
+  }
+
+  filter {
+    name   = "availability-zone"
+    values = [var.az]
+  }
+}
+
+# Create EC2 instance in the selected subnet
+resource "aws_instance" "myec2" {
+  ami           = var.ami_id
+  instance_type = var.instance_type
+  subnet_id     = data.aws_subnet.selected_subnet.id
+
+  tags = {
+    Name = var.instance_name
+  }
+}
+
+#variables.tf
+
+variable "ami_id" {}
+variable "instance_type" {}
+variable "instance_name" {}
+variable "az" {}
+
+#myvars.tfvars
+instance_type = "t2.micro"
+ami_id        = "ami-0520f976ad2e6300c"
+instance_name = "task11_server1a"
+az            = "us-west-2a"
