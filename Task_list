@@ -1,0 +1,13 @@
+Task-12
+#Create three servers with each in each availability zone like server 1a, 1b,1c.
+
+Task -13
+Create a vpc with 9 subnets(6 private and 3 public). 3 types application, database and loadbalncer
+
+Task14
+Create RDS with mysql and choose the private db subnets for the same. Create one EC2 instance then install and configure the wordpress, generate an image out of it.
+Note:  your code should dynamically pick the rds dns and it should inject to ec2 on image creation.
+
+Better to create one more subnet called Jump subnet and make it as public
+
+Ensure you are managing the security groups accordingly
