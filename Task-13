@@ -1,0 +1,130 @@
+#Task 13 -Create a vpc with 9 subnets(6 private and 3 public). 3 types application, database and loadbalncer
+
+##########variables.tf
+variable "vpc_name" {}
+variable "vpc_cidr_block" {}
+variable "subnet_cidr_blocks" {
+  description = "List of subnet CIDR blocks for public and private subnets"
+  type        = list(string)
+  default = [
+    "10.0.1.0/24",  # Public LB Subnet 1
+    "10.0.2.0/24",  # Public LB Subnet 2
+    "10.0.3.0/24",  # Public LB Subnet 3
+    "10.0.4.0/24",  # Private Application Subnet 1
+    "10.0.5.0/24",  # Private Application Subnet 2
+    "10.0.6.0/24",  # Private Application Subnet 3
+    "10.0.7.0/24",  # Private Database Subnet 1
+    "10.0.8.0/24",  # Private Database Subnet 2
+    "10.0.9.0/24"   # Private Database Subnet 3
+  ]
+}
+
+variable "availability_zones" {
+  description = "List of availability zones"
+  type        = list(string)
+  default     = ["us-west-2a", "us-west-2b", "us-west-2c"]
+}
+
+
+###########Myvariables.tfvars
+
+vpc_cidr_block = "10.0.0.0/16"
+vpc_name = "VPC-13"
+
+
+############vpc.tf
+# Create the VPC
+resource "aws_vpc" "vpc_13" {
+  cidr_block = var.vpc_cidr_block
+
+  tags = {
+    Name        = var.vpc_name
+  }
+}
+
+######### igw.tf
+# Create an Internet Gateway for Public Subnets
+resource "aws_internet_gateway" "my_igw" {
+  vpc_id = aws_vpc.vpc_13.id
+
+  tags = {
+    Name = "${var.vpc_name}_IGW"
+  }
+}
+
+###########subnet.tf
+# Create Subnets
+resource "aws_subnet" "subnet" {
+  count                  = length(var.subnet_cidr_blocks)
+  vpc_id                 = aws_vpc.vpc_13.id
+  cidr_block             = var.subnet_cidr_blocks[count.index]
+  availability_zone      = var.availability_zones[count.index % 3]  # Distribute across AZs
+  map_public_ip_on_launch = false  # Do not associate public IPs
+
+  tags = {
+    Name = "Subnet-${count.index + 1}"
+    Role = (
+      count.index < 3 ? "Load Balancer" :
+      (count.index >= 3 && count.index < 6 ? "Application" :
+      "Database")
+    )
+  }
+}
+
+###### route_table.tf
+# Create a Route Table for the Public Subnets (Load Balancer)
+resource "aws_route_table" "public_route" {
+  vpc_id = aws_vpc.vpc_13.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.my_igw.id
+  }
+
+  tags = {
+    Name = "${var.vpc_name}_ROUTE"
+  }
+}
+
+# Create a Route Table for the Private Subnets
+resource "aws_route_table" "private_route" {
+  vpc_id = aws_vpc.vpc_13.id
+
+
+
+  tags = {
+    Name = "${var.vpc_name}_PRIVATE_ROUTE"
+  }
+}
+
+######## private_sub_route_association.tf
+# Associate Private Subnets with Private Route Table
+resource "aws_route_table_association" "subnet-private_association" {
+  count          = 6  # Private subnets (remaining 6)
+  subnet_id      = aws_subnet.subnet[count.index + 3].id
+  route_table_id = aws_route_table.private_route.id
+}
+
+######public_sub_route_association.tf
+# Associate Public Subnets with Route Table
+resource "aws_route_table_association" "public_association" {
+  count          = 3  # Public subnets (first 3)
+  subnet_id      = aws_subnet.subnet[count.index].id
+  route_table_id = aws_route_table.public_route.id
+}
+############# providers.tf
+terraform {
+  required_providers {
+    aws = {
+      source = "hashicorp/aws"
+      version = "5.93.0"
+    }
+  }
+}
+
+provider "aws" {
+  # Configuration options
+  region = "us-west-2"
+}
+
+
