@@ -1,0 +1,67 @@
+#Create three servers with each in each availability zone like server 1a, 1b,1c.
+#variables.tf
+
+variable "ami_id" {}
+variable "instance_type" {}
+variable "vpc_name" {}
+variable "vpc_cidr_block" {}
+# Define different subnet CIDR blocks for different availability zones
+variable "subnet_cidr_blocks" {
+  description = "List of subnet CIDR blocks"
+  type        = list(string)
+  default = [
+    "10.0.1.0/24",  # Subnet 1 (us-east-1a)
+    "10.0.2.0/24",  # Subnet 2 (us-east-1b)
+    "10.0.3.0/24"   # Subnet 3 (us-east-1c)
+  ]
+}
+
+#myvars.tfvars
+
+ami_id = "ami-0520f976ad2e6300c"
+instance_type = "t2.micro"
+vpc_cidr_block = "10.0.0.0/16"
+vpc_name = "MYVPC"
+subnet_cidr_blocks = ["10.0.1.0/22","10.0.2.0/26","10.0.7.0/24" ]
+
+#providers.tf
+
+
+#ec2.tf
+
+resource "aws_instance" "myec2_servers" {
+  ami           = var.ami_id
+  instance_type = var.instance_type
+  count         = length(var.subnet_cidr_blocks)
+  subnet_id     = aws_subnet.subnet[count.index].id
+  associate_public_ip_address = true
+  tags = {
+    Name = "Instance-${count.index + 1}"
+  }
+}
+
+#vpc.tf
+
+resource "aws_vpc" "my_vpc" {
+  cidr_block = var.vpc_cidr_block
+  tags = {
+    Name = var.vpc_name
+  }
+}
+
+#subnet.tf
+resource "aws_subnet" "subnet" {
+  count                  = length(var.subnet_cidr_blocks)
+  vpc_id                 = aws_vpc.my_vpc.id
+  cidr_block             = var.subnet_cidr_blocks[count.index]  # Use the CIDR block from the list
+  availability_zone      = element(data.aws_availability_zones.available.names, count.index)
+  map_public_ip_on_launch = true
+
+  tags = {
+    Name = "Subnet-${count.index + 1}"
+  }
+}
+
+#azs.tf
+# Get the availability zones for the region
+data "aws_availability_zones" "available" {}
