@@ -1,0 +1,11 @@
+
+resource "aws_instance" "my_ec2_base" {
+  ami           = aws_ami_from_instance.base_ami.id
+  instance_type = var.instance_type
+  subnet_id   = aws_subnet.subnet[3].id 
+  associate_public_ip_address = "false"
+  tags = {
+    Name = "trial"
+  }
+}
+
