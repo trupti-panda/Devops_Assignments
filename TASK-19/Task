@@ -1,0 +1,1 @@
+Task19: create two servers in dev and prod environments using terraform. Use Ansible to automatically retrieve them dynamically from aws and install java inside the servers. For example in future any servers are added like in dev and prod environment we should not do any changes in Ansible hosts file.
