@@ -1,0 +1,21 @@
+---
+- name: Install Java in all servers
+  hosts: all
+  become: yes
+  tasks:
+    - name: Add Amazon Corretto 11 repo
+      get_url:
+        url: https://yum.corretto.aws/corretto.repo
+        dest: /etc/yum.repos.d/corretto.repo
+    - name: Install Java
+      yum:
+        name: java-11-amazon-corretto
+    - name: Fetch Java version from all serevrs
+      shell: java --version
+      register: java_version
+    - name: Print Java version using set_fact
+      set_fact:
+        output: "{{ inventory_hostname }}: {{java_version.stdout}}"
+    - name: Show Java version for the host
+      debug:
+        msg: "{{ output }}"

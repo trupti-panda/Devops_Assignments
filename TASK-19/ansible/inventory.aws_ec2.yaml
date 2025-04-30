@@ -1,0 +1,16 @@
+plugin: aws_ec2
+regions:
+  - us-west-2  # Replace with your AWS region
+filters:
+  tag:Name:         # Use 'tag:Name' for filtering by EC2 tags
+    - dev-server-*
+    - prod-server-*
+keyed_groups:
+  - key: tags.Name
+    separator: "_"
+compose:
+  ansible_host: dns-name  # Default public DNS for connecting to instances
+  server_name: tags.Name  # Capture the instance Name tag as a variable
+hostnames:
+  - dns-name
+
