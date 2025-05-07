@@ -1,0 +1,74 @@
+---
+- name: Installing db on ec2
+  hosts: app-server
+  become: yes
+  vars_files:
+    - ./vars/db_host.yaml
+    - ./vars/secrets.yaml
+  tasks:
+    - name: Executing pre requisites
+      shell: amazon-linux-extras install -y lamp-mariadb10.2-php7.2 php7.2
+    - name: Install httpd
+      yum:
+        name: httpd
+        state: latest
+    - name: Enable httpd
+      systemd:
+        name: httpd
+        enabled: yes
+    - name: Download and unarchive wordpress application
+      unarchive:
+        src: https://wordpress.org/latest.tar.gz
+        dest: /var/www/html/
+        remote_src: yes
+        owner: apache
+        group: apache
+    - name: Configure wp-config.php file
+      template: 
+        src: wp-config.php
+        dest: /var/www/html/wp-config.php
+        owner: apache
+        group: apache
+          #notify: restart apache 
+
+    - name: Download wp-cli-phar file
+      get_url:
+        url: "{{wp_phar_url}}"
+        dest: /usr/local/bin/wp-cli.phar
+        mode: '0755'
+    - name: Rename wp-cli.phar to wp
+      command: mv /usr/local/bin/wp-cli.phar /usr/local/bin/wp
+      args:
+        creates: /usr/local/bin/wp
+
+    - name: Ensure wp is executable
+      file:
+        path: /usr/local/bin/wp
+        mode: '0755'
+        state: file
+    - name: Ensure WordPress files are extracted
+      stat:
+        path: /var/www/html/wp-config.php
+      register: wp_stat
+    - name: Fail if WordPress files are not found
+      fail:
+        msg: "WordPress files not found in /var/www/html/"
+      when: wp_stat.stat.exists == false
+
+        #- name: Download WordPress core files if needed
+        #command: >
+        #/usr/local/bin/wp core download --path=/var/www/html --allow-root
+        #args:
+        #chdir: /var/www/html
+    - name: Install WordPress site
+      command: >
+        /usr/local/bin/wp core install
+        --url="http://35.91.234.206"
+        --title="{{ wp_title }}"
+        --admin_user="{{ wp_admin_user }}"
+        --admin_password="{{ wp_admin_password }}"
+        --admin_email="{{ wp_admin_email }}"
+        --path="/var/www/html"
+        --allow-root
+      args:
+        chdir: /var/www/html
