@@ -1,0 +1,16 @@
+---
+- name: Install DB
+  hosts: dbserver
+  vars_files:
+    - ./vars/vars.yaml
+    - ./vars/secrets.yaml
+  roles:
+    - db
+
+- name: Install Wordpress and configure
+  hosts: appserver
+  vars_files:   
+    - ./vars/vars.yaml
+    - ./vars/secrets.yaml
+  roles:
+    - app
