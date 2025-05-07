@@ -1,0 +1,36 @@
+---
+- name: Installing MariaDB
+  hosts: app-server
+  vars_files: 
+    - ./vars/db_host.yaml
+    - ./vars/secrets.yaml
+  become: yes
+  tasks:
+    - name: Install latest version of mariaDB
+      yum:
+        name: mariadb-server
+        state: present
+    - name: Install PyMySQL via pip3
+      pip:
+        name: PyMySQL
+        executable: pip3
+    - name: Enabling mariaDB
+      systemd: 
+        name: mariadb
+        enabled: yes
+    - name: Restart maria DB
+      systemd: 
+        name: mariadb
+        state: started
+    - name: Create database user  and password  with all database privileges
+      mysql_user:
+        name: "{{DB_USER}}"
+        password: "{{DB_PASS}}"
+        host: '%'
+        priv: '*.*:ALL'
+        state: present
+    - name: create database
+      mysql_db:
+        name: "{{DB_NAME}}"
+        state: present
+
